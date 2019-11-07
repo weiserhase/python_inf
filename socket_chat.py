@@ -2,7 +2,7 @@ import socket
 import threading
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind(("10.1.20.107", 50000))
+s.bind(("192.168.178.137", 50000))
 s.listen(1)
 
 connections = {}

@@ -1,6 +1,6 @@
 import socket
 import threading
-ip = "10.1.20.107"
+ip = "192.168.178.137"
 port = 50000
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -12,7 +12,7 @@ def input_thread():
         if not anwser:
             s.close()
             break
-        print(answer.decode())
+        print(anwser.decode())
     
 t = threading.Thread(target=input_thread)
 t.start()
