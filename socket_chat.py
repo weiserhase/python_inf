@@ -2,33 +2,66 @@ import socket
 import threading
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind(("192.168.178.137", 50000))
+s.bind(("10.1.20.101", 50000))
 s.listen(1)
 
-connections = {}
+clients = {}
 
-class recv_thread (threading.Thread):
-    def __init__(self, addr):
+class client(threading.Thread):
+    nickname = False
+
+    def __init__(self, addr, socket):
         threading.Thread.__init__(self)
-        self. addr = addr
+        self.addr = addr
+        self.socket = socket
+
+    def send(self, message):
+        self.socket.send(message.encode())
+
+    def sendAll(self, message):
+        print("[{}] {}".format(self.addr, message))
+        if(self.nickname==False):
+            name = self.addr
+        else:
+            name = self.nickname
+        for client in clients.items():
+            if str(client.socket) != str(self.socket):
+                client.send(("[{}] {}".format(name, message)))
+
+    def sendSelf(self, message):
+        self.socket.send(message.encode())
+
+    #define command functionality
+    def helpText(self):
+        self.sendSelf('commands: /nick')
+    def nick(self, parts):
+        name = parts[1]
+        self.nickname = name
+    def execute_command(self, parts):
+        switcher = {
+            '/help': self.helpText,
+            '/nick': self.nick
+        }
+        return switcher.get(parts[0], self.helpText)()
     def run(self):
         while True: 
-            data = connections[self.addr].recv(1024)
-            print("[{}] {}".format(self.addr, data.decode()))
-            for key, value in connections.items():
-                if key != str(self.addr): 
-                    value.send(("[{}] {}".format(self.addr, data.decode())).encode())
+            data = self.socket.recv(1024)
+            if not data.decode().startswith("/"):
+                self.sendAll(data.decode())
+            else:
+                command_parts = data.decode().split(' ')
+                self.execute_command(command_parts)
+
+
+
 
 try:
     while(True):
-        print('in while')
         komm, addr = s.accept()
-        clientIp = addr[0]
-        connections[clientIp] = komm
-        print('before thread init')
-        newT = recv_thread(clientIp)
-        print('before thread start')
-        newT.start()
-        print('after thread start')
+        clientId = str(addr)
+        newClient = client(clientId, komm)
+        newClient.start()
+        clients[clientId] = newClient
+        print('Neuer Client verbunden. IP: '+clientId)
 finally:
     s.close()
